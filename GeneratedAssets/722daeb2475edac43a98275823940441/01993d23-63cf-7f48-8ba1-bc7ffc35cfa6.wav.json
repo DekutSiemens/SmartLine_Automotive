@@ -1,0 +1,13 @@
+{
+    "asset": "722daeb2475edac43a98275823940441",
+    "fileName": "01993d23-63cf-7f48-8ba1-bc7ffc35cfa6.wav",
+    "prompt": "Generate a high-quality stereo sound effect of an industrial sliding metal door opening. The sound should start with a short mechanical click, then a smooth, continuous metallic sliding noise lasting 3–4 seconds, with a clean low-frequency rumble and subtle high-frequency scrape.just the door sliding in a quiet factory environment. Output as 44.1kHz WAV, seamless, ready for looping or one-shot playback in Unity.\"",
+    "negativePrompt": "No voices, no background noise, no reverb",
+    "model": "0ee39b33-2893-4e0f-8c46-0e0bdd4eda85",
+    "modelName": "Text to Sound",
+    "customSeed": -1,
+    "w3CTraceId": "064915c5e855c42a2b21a4cfb67d122c",
+    "duration": 10.0,
+    "autoTrim": false,
+    "hasReference": false
+}

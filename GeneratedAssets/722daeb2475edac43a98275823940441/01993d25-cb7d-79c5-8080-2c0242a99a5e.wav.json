@@ -1,0 +1,13 @@
+{
+    "asset": "722daeb2475edac43a98275823940441",
+    "fileName": "01993d25-cb7d-79c5-8080-2c0242a99a5e.wav",
+    "prompt": "Generate a clean sci-fi sliding door opening sound effect. The sound should be futuristic and smooth, with a short energy pulse or soft chime at the start, followed by a sleek whoosh and low mechanical hum as the door slides open.",
+    "negativePrompt": "No voices, no background noise, no reverb",
+    "model": "0ee39b33-2893-4e0f-8c46-0e0bdd4eda85",
+    "modelName": "Text to Sound",
+    "customSeed": -1,
+    "w3CTraceId": "7d392097fdde3abadc3949e59ff078de",
+    "duration": 10.0,
+    "autoTrim": false,
+    "hasReference": false
+}

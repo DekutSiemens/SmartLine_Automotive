@@ -1,0 +1,13 @@
+{
+    "asset": "722daeb2475edac43a98275823940441",
+    "fileName": "01993d1e-d65e-7d8b-93df-711c0d296348.wav",
+    "prompt": "scifi door sliding open",
+    "negativePrompt": "noise,reverb,music,distorted",
+    "model": "0ee39b33-2893-4e0f-8c46-0e0bdd4eda85",
+    "modelName": "Text to Sound",
+    "customSeed": -1,
+    "w3CTraceId": "2d03c775a53d17263b35a802f71eda61",
+    "duration": 3.5759999752044679,
+    "autoTrim": true,
+    "hasReference": true
+}

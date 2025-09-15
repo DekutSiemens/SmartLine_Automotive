@@ -5,13 +5,13 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/1 Start Scene.unity
     guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/2 Virtual Factory (progress).unity
     guid: 4e9fef26e6adb88479ad1b9834a32d94
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/3 Car Basics.unity
     guid: 7a7e40f496b0c5d409a3a7b66f37fe5d
   - enabled: 0
