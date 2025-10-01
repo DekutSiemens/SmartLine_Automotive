@@ -989,8 +989,8 @@ MonoBehaviour:
   m_Name: Standalone
   m_EditorClassIdentifier: 
   features:
-  - {fileID: 4963040286616351577}
-  - {fileID: -8749980634715080836}
+  - {fileID: 1443452708213354362}
+  - {fileID: -1557233674024107270}
   - {fileID: 9096479736163431129}
   - {fileID: 1503405675756685206}
   - {fileID: -4478006660784508864}
@@ -1000,14 +1000,14 @@ MonoBehaviour:
   - {fileID: -5941725581135416239}
   - {fileID: -6538670798861174773}
   - {fileID: 1093971726280805316}
-  - {fileID: -1028784285735575096}
+  - {fileID: 4025793028449617705}
   - {fileID: -381482547018402083}
   - {fileID: 6841333374066517713}
-  - {fileID: -4454024988132797082}
-  - {fileID: 154189092879288027}
-  - {fileID: -4731438336562001402}
-  - {fileID: 4135229692886101830}
-  - {fileID: -5611916350011621528}
+  - {fileID: -8316650401159007347}
+  - {fileID: -8895518590110429109}
+  - {fileID: 4451366187881382638}
+  - {fileID: 4890582492822650874}
+  - {fileID: 2220871646205782247}
   - {fileID: -1093960268216233939}
   - {fileID: -2361615802184818959}
   m_renderMode: 0
@@ -2919,10 +2919,16 @@ MonoBehaviour:
   - {fileID: 4890582492822650874}
   - {fileID: -7494486358618572369}
   m_renderMode: 1
+  m_latencyOptimization: 0
   m_autoColorSubmissionMode: 1
   m_colorSubmissionModes:
     m_List: 00000000
   m_depthSubmissionMode: 0
+  m_spacewarpMotionVectorTextureFormat: 0
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
+  m_optimizeMultiviewRenderRegions: 0
+  m_multiviewRenderRegionsOptimizationMode: 0
+  m_hasMigratedMultiviewRenderRegionSetting: 1
   m_foveatedRenderingApi: 0
+  m_useOpenXRPredictedTime: 0

@@ -1359,12 +1359,12 @@ namespace realvirtual
 
         void Update()
         {
-            //   QuickToggle.SetGame4Automation(this);
+           /* //   QuickToggle.SetGame4Automation(this);
             if (Application.isPlaying)
             {
                 if (Input.GetKey(KeyCode.Escape))
                 {
-                   // Quit();
+                    Quit();
                 }
 
                 if (Input.GetKeyDown(KeyCode.F12))
@@ -1374,7 +1374,7 @@ namespace realvirtual
                         _debugconsole.SetActive(!_debugconsole.activeSelf);
                     }
                 }
-            }
+            }*/
         }
 
         static void AddComponent(string assetpath)

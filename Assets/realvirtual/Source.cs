@@ -354,11 +354,11 @@ namespace realvirtual
                 AutomaticGeneration = SourceGenerateOnDistance.Value;
             
             // Delete  on Keypressed
-            if (Input.GetKeyDown(realvirtualController.HotkeyDelete))
+            /*if (Input.GetKeyDown(realvirtualController.HotkeyDelete))
             {
                 if (realvirtualController.EnableHotkeys)
                     DeleteAll();
-            }
+            }*/
             if (PositionOverwrite)
                 return;
             
@@ -398,8 +398,8 @@ namespace realvirtual
             }
             
             // Generate on Keypressed
-            if (Input.GetKeyDown(realvirtualController.HotkeyCreateOnSource))
-                Generate();
+            /*if (Input.GetKeyDown(realvirtualController.HotkeyCreateOnSource))
+                Generate();*/
 
             if (GenerateMU == false)
                 _generatebefore = false;
