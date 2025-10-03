@@ -1,12 +1,12 @@
 ﻿// realvirtual.io (formerly game4automation) (R) a Framework for Automation Concept Design, Virtual Commissioning and 3D-HMI
-// Copyright(c) 2019 realvirtual GmbH - Usage of this source code only allowed based on License conditions see https://realvirtual.io/unternehmen/lizenz  
+// Copyright(c) 2019 realvirtual GmbH - Usage of this source code only allowed based on License
+// conditions see https://realvirtual.io/unternehmen/lizenz
 
 #pragma warning disable 0168
 #pragma warning disable 0649
 
 using System;
 using System.Collections;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -16,10 +16,16 @@ using Object = UnityEngine.Object;
 using System.Linq;
 using IngameDebugConsole;
 using RuntimeInspectorNamespace;
+using UnityEngine.Serialization;
+
+// ===== New Input System =====
+using UnityEngine.InputSystem;
+
+// ===== Editor usings guarded =====
 #if UNITY_EDITOR
+using UnityEditor;
 using UnityEditor.SceneManagement;
 #endif
-using UnityEngine.Serialization;
 
 #if CINEMACHINE
 using Cinemachine;
@@ -27,7 +33,6 @@ using Cinemachine;
 #if (UNITY_POST_PROCESSING_STACK_V2)
 using UnityEngine.Rendering.PostProcessing;
 #endif
-
 
 namespace realvirtual
 {
@@ -41,22 +46,22 @@ namespace realvirtual
         [Header("General options")]
         [Tooltip("Indicates connection status to interfaces for toggling realvirtual components based on active status")]
         public bool Connected = true; //!< Indicates connection status to interfaces for toggling realvirtual components based on active status
-        
+
         [Tooltip("Performs model check before starting simulation")]
         public bool ModelCheckerEnabled = true; //!< Performs model check before starting simulation
-        
+
         [Tooltip("Enables validation when components are added to GameObjects")]
         public bool ValidationOnComponentsAdded = true; //!< Enables validation when components are added to GameObjects
-        
+
         [Tooltip("Enables validation before entering play mode")]
         public bool ValidateBeforeStart = true; //!< Enables validation before entering play mode
-        
+
         [Tooltip("Stops physics when scene is paused")]
         public bool StopPhysicsWhenPaused = false; //!< Stops physics when scene is paused
-        
+
         [Tooltip("Global scale factor in millimeters for size adjustment")]
         public float Scale = 1000; //!< Global scale factor in millimeters for size adjustment
-        
+
         public bool DebugMode = false; //!< Enables debug mode for development
 
 #if CINEMACHINE
@@ -218,6 +223,13 @@ namespace realvirtual
         [Tooltip("Reference to the runtime automation UI")]
         public GameObject RuntimeAutomationUI; //!< Runtime automation UI reference
 
+        // ===== New Input System (replacement for legacy hotkeys) =====
+        [Header("Input (New Input System)")]
+        [Tooltip("Action to toggle the debug console (e.g., <Keyboard>/f12)")]
+        public InputActionReference ToggleConsoleAction;
+
+        [Tooltip("Action to quit the application (e.g., <Keyboard>/escape)")]
+        public InputActionReference QuitAction;
 
         [HideInInspector] public List<GameObject> LockedObjects = new List<GameObject>();
         [HideInInspector] public List<string> HiddenGroups;
@@ -255,15 +267,13 @@ namespace realvirtual
         private DateTime _lastupdatesingals;
         private SelectionRaycast currentSelectionRaycast;
 
-
         private static int undoIndex;
         private rvUIToolbarButton _buttonconnection;
 
         #endregion
-        
+
         #region DebugCommands
         [ConsoleMethod("HideInfo", "Hides for future starts the Info Box")]
-        //! Hides the info box permanently by saving preference
         public static void HideInfo()
         {
             var controllerInstance = FindFirstObjectByType<realvirtualController>();
@@ -271,9 +281,8 @@ namespace realvirtual
             Persistence.Save(controllerInstance.HideInfoBox, controllerInstance.name, "HideInfoBox");
             Logger.Message("Infobox hidden for future starts", controllerInstance);
         }
-        
+
         [ConsoleMethod("DeletePrefs", "Deletes all Player Prefs")]
-        //! Deletes all Unity PlayerPrefs stored data
         public static void DeleteControllerPrefs()
         {
             PlayerPrefs.DeleteAll();
@@ -281,7 +290,6 @@ namespace realvirtual
         }
 
         [ConsoleMethod("ConnectOn", "Turns on Connect Mode - is also saved for next start")]
-        //! Enables connection mode and saves the preference
         public static void TurnOnConnectMode()
         {
             var controllerInstance = FindFirstObjectByType<realvirtualController>();
@@ -293,10 +301,9 @@ namespace realvirtual
         }
 
         [ConsoleMethod("ConnectOff", "Turns off Connect Mode - is saved for next start")]
-        //! Disables connection mode and saves the preference
         public static void TurnOffConnectMode()
         {
-            var controllerInstance =  FindFirstObjectByType<realvirtualController>();
+            var controllerInstance = FindFirstObjectByType<realvirtualController>();
             controllerInstance.Connected = false;
             controllerInstance.ConnectionButtonToggleOff();
             Persistence.Save(controllerInstance.Connected, "realvirtualController", "Connected");
@@ -304,39 +311,34 @@ namespace realvirtual
             controllerInstance.UpdateConnectionButton();
         }
 
-
         [ConsoleMethod("DebugOn", "Turns on Debug Mode - Player needs to be restarted to debug from Start on")]
-        //! Enables debug mode and saves the preference (requires restart to debug from start)
         public static void TurnOnDebugMode()
         {
-            var controllerInstance =  FindFirstObjectByType<realvirtualController>();
+            var controllerInstance = FindFirstObjectByType<realvirtualController>();
             controllerInstance.DebugMode = true;
             Persistence.Save(controllerInstance.DebugMode, "realvirtualController", "DebugMode");
             Logger.Message("Debug Mode turned on - Restart Player to debug from Start on", controllerInstance);
         }
 
         [ConsoleMethod("DebugOff", "Turns on Debug Mode - Player needs to be restarted to debug from Start on")]
-        //! Disables debug mode and saves the preference
         public static void TurnOffDebugMode()
         {
-            var controllerInstance =  FindFirstObjectByType<realvirtualController>();
+            var controllerInstance = FindFirstObjectByType<realvirtualController>();
             controllerInstance.DebugMode = false;
             Persistence.Save(controllerInstance.DebugMode, "realvirtualController", "DebugMode");
             Logger.Message("Debug Mode turned off - saved to Player Prefs", controllerInstance);
         }
         #endregion
-        
+
         #region GlobalInitEvents
-        //! Called before Awake to initialize global settings and load preferences.
-        //! IMPLEMENTS IBeforeAwake::OnBeforeAwake
         public void OnBeforeAwake()
         {
             if (DebugMode) Logger.Message("<color=green>---------------- STARTING PLAYMODE DEBUG</color>");
             Global.SetG4AController(this);
-           
-            if(!Application.isPlaying)
+
+            if (!Application.isPlaying)
                 return;
-            
+
             var loaded = Persistence.Load<bool>(ref DebugMode, "realvirtualController", "DebugMode");
             if (DebugMode)
             {
@@ -351,42 +353,34 @@ namespace realvirtual
                     Logger.Message("Global Connected Mode loaded from Player Prefs", this);
                 UpdateConnectionButton();
             }
-            
+
             // call all IInitStart Interfaces
             if (DebugMode) Logger.Message("<color=green>---------------- INIT realvirtualController - Call IInitStart</color>");
-            var initStarts = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude,FindObjectsSortMode.None).OfType<IInitStart>();
+            var initStarts = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).OfType<IInitStart>();
             foreach (var initstart in initStarts)
             {
                 initstart.InitStart();
             }
-            
-//#if !UNITY_EDITOR
-                LoadAdditiveScenes();
-//#endif
-            
-       
-            
+
+            LoadAdditiveScenes();
         }
 
         private void AllScenesAreLoaded()
         {
-            // call all IInitStart Interfaces
             if (DebugMode) Logger.Message("<color=green>---------------- INIT realvirtualController - Call IAllScenesLoaded</color>");
-            var iallscenesloaded = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude,FindObjectsSortMode.None).OfType<IAllScenesLoaded>();
+            var iallscenesloaded = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).OfType<IAllScenesLoaded>();
             foreach (var allscenesloaded in iallscenesloaded)
             {
                 allscenesloaded.AllScenesLoaded();
             }
             if (DebugMode) Logger.Message("<color=green>---------------- INIT realvirtualController - Call IPostAllScenesLoaded</color>");
-            var ipostallscenesloaded = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude,FindObjectsSortMode.None).OfType<IPostAllScenesLoaded>();
+            var ipostallscenesloaded = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).OfType<IPostAllScenesLoaded>();
             foreach (var ipostallscenes in ipostallscenesloaded)
             {
                 ipostallscenes.PostAllScenesLoaded();
             }
-            
         }
 
-        //! Called when the component is enabled, handles initialization and scene setup
         public void OnEnable()
         {
 #if UNITY_EDITOR
@@ -408,26 +402,35 @@ namespace realvirtual
                 QuickToggle.SetGame4Automation(this);
                 UpdateAllLockedAndHidden();
             }
-   
 #endif
             SceneManager.sceneLoaded += OnSceneLoaded;
-            
+
             if (Application.isPlaying)
             {
-                // call all IInitEnable
+                // === New Input System: hook actions ===
+                if (ToggleConsoleAction != null)
+                {
+                    ToggleConsoleAction.action.performed += OnToggleConsole;
+                    ToggleConsoleAction.action.Enable();
+                }
+                if (QuitAction != null)
+                {
+                    QuitAction.action.performed += OnQuitAction;
+                    QuitAction.action.Enable();
+                }
+
                 if (DebugMode) Logger.Message("<color=green>---------------- INIT realvirtualController - OnEnable - Call IInitEnable</color>");
-                var initEnables = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude,FindObjectsSortMode.None).OfType<IInitEnable>();  
+                var initEnables = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).OfType<IInitEnable>();
                 foreach (var initenable in initEnables)
                 {
                     initenable.InitEnable();
                 }
             }
-         
         }
-        
+
         new void Awake()
         {
-            /// Set all UI Elements to standards
+            // Set all UI Elements to standards
             var settingscontroller = Global.GetComponentAlsoInactive<SettingsController>(this.gameObject);
             if (settingscontroller != null)
             {
@@ -436,7 +439,7 @@ namespace realvirtual
                 window.SetActive(false);
                 Global.SetActiveSubObjects(window, true);
             }
-            
+
             Persistence.Load(ref HideInfoBox, this.name, "HideInfoBox");
 
             var info = GetChildByNameAlsoHidden("Info");
@@ -491,74 +494,61 @@ namespace realvirtual
                 if (currentSelectionRaycast != null)
                     currentSelectionRaycast.IsActive = false;
             }
-            // detect current scene name
-            
-            
-           if (Application.isPlaying)
-               Logger.Message("Starting scene " +SceneManager.GetActiveScene().name + " realvirtual Version " + Global.Version);
+
+            if (Application.isPlaying)
+                Logger.Message("Starting scene " + SceneManager.GetActiveScene().name + " realvirtual Version " + Global.Version);
 
             if (EditorGizmoSettings != null)
                 EditorGizmoSettings.SelectedMeshes.Clear();
 
             if (Application.isPlaying)
             {
-                // call all IInitAwake
                 if (DebugMode) Logger.Message("<color=green>---------------- INIT realvirtualController - Awake - Call IInitAwake</color>");
-                var initAwakes = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude,FindObjectsSortMode.None).OfType<IInitAwake>();
+                var initAwakes = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).OfType<IInitAwake>();
                 foreach (var initawake in initAwakes)
                 {
                     initawake.InitAwake();
                 }
             }
-          
         }
-        //! Stops the simulation for all realvirtual behaviors
+
         public new void StopSim()
         {
             if (DebugMode) Logger.Message("<color=yellow>---------------- STOP SIMULATION</color>");
-            var realvirtualBehaviors =
-                UnityEngine.Object.FindObjectsByType<realvirtualBehavior>(FindObjectsSortMode.None);
-            // get all Game4automationBehaviors
+            var realvirtualBehaviors = UnityEngine.Object.FindObjectsByType<realvirtualBehavior>(FindObjectsSortMode.None);
             foreach (var behavior in realvirtualBehaviors)
             {
                 behavior.StopSim();
             }
         }
 
-        //! Starts the simulation for all realvirtual behaviors
         public new void StartSim()
         {
             if (DebugMode) Logger.Message("<color=yellow>---------------- PRE START SIMULATION</color>");
-            var realvirtualBehaviors =
-                UnityEngine.Object.FindObjectsByType<realvirtualBehavior>(FindObjectsSortMode.None);
+            var realvirtualBehaviors = UnityEngine.Object.FindObjectsByType<realvirtualBehavior>(FindObjectsSortMode.None);
             foreach (var behavior in realvirtualBehaviors)
             {
                 behavior.PreStartSim();
             }
-            
-            if (DebugMode) Logger.Message("<color=yellow>---------------- START SIMULATION</color>");
 
-            // get all Game4automationBehaviors
+            if (DebugMode) Logger.Message("<color=yellow>---------------- START SIMULATION</color>");
             foreach (var behavior in realvirtualBehaviors)
             {
                 behavior.StartSim();
             }
         }
-        
-        //! Quits the application
+
         public void Quit()
         {
             Application.Quit();
         }
-        
-        //! Starts the simulation and sets the time scale
+
         public void Play()
         {
             Time.timeScale = TimeScale;
             StartSim();
         }
 
-        //! Pauses the simulation and optionally stops physics
         public void Pause()
         {
             if (StopPhysicsWhenPaused)
@@ -569,9 +559,7 @@ namespace realvirtual
                 BroadcastMessage("SetToggleOn", "Pause", SendMessageOptions.DontRequireReceiver);
             }
         }
-        
-       
-        //! Enables connection mode and updates all realvirtual behaviors
+
         public void ConnectionButtonToggleOn()
         {
             Connected = true;
@@ -582,7 +570,6 @@ namespace realvirtual
             }
         }
 
-        //! Disables connection mode and updates all realvirtual behaviors
         public void ConnectionButtonToggleOff()
         {
             Connected = false;
@@ -593,7 +580,6 @@ namespace realvirtual
             }
         }
 
-        //! Called when an interface connection is opened
         public void OnConnectionOpened(GameObject Interface)
         {
             if (!ConnectionsActive.Contains(Interface))
@@ -601,15 +587,12 @@ namespace realvirtual
             UpdateInterfaceButtonStatus();
         }
 
-        //! Called when an interface connection is closed
         public void OnConnectionClosed(GameObject Interface)
         {
             if (ConnectionsActive.Contains(Interface))
                 ConnectionsActive.Remove(Interface);
             UpdateInterfaceButtonStatus();
         }
-
-        
 
         void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
@@ -618,28 +601,23 @@ namespace realvirtual
             {
                 AllScenesAreLoaded();
             }
-                
         }
-        
+
 #if UNITY_EDITOR
-        //! Called when the component is disabled, cleans up references
         public void OnDisable()
         {
             QuickToggle.SetGame4Automation(null);
             SceneManager.sceneLoaded -= OnSceneLoaded;
             Global.SetG4AController(null);
         }
-        
-        //! Called when edit mode is finished in the Unity Editor
+
         public void OnEditModeFinished()
         {
             if (DebugMode) Logger.Message("On Editmode Finished", this);
         }
 
-        //! Called when play mode is finished in the Unity Editor
         public void OnPlayModeFinished()
         {
-#if UNITY_EDITOR
             if (DebugMode)
                 Logger.Message("realvirtual Controller - Play Mode Finished");
 
@@ -652,7 +630,6 @@ namespace realvirtual
                         if (nav.LastCameraPosition != null)
                             nav.LastCameraPosition.SetCameraPositionEditor(Camera.main);
             }
-#endif
         }
 #endif
         private void OnDestroy()
@@ -660,14 +637,20 @@ namespace realvirtual
 #if UNITY_EDITOR
             EditorApplication.update -= CeckSignalUpdate;
 #endif
+            // === New Input System: unhook actions ===
+            if (Application.isPlaying)
+            {
+                if (ToggleConsoleAction != null)
+                    ToggleConsoleAction.action.performed -= OnToggleConsole;
+                if (QuitAction != null)
+                    QuitAction.action.performed -= OnQuitAction;
+            }
         }
 
         #endregion
-        
+
         #region PublicMethods
-        public new void ChangeConnectionMode(bool isconnected)
-        {
-        }
+        public new void ChangeConnectionMode(bool isconnected) { }
 
         public void SetStartView()
         {
@@ -793,8 +776,6 @@ namespace realvirtual
         }
 
 #if UNITY_EDITOR
-
-
         public void SetVisible(GameObject target, bool isActive)
         {
             Global.SetVisible(target, isActive);
@@ -823,7 +804,6 @@ namespace realvirtual
                     }
                 }
         }
-
 
         public void ResetView()
         {
@@ -864,23 +844,18 @@ namespace realvirtual
         {
             Global.HideSubObjects(target, hide);
         }
-
 #endif
 
- 
         public void BreakTriggeredByStep(rvUIToolbarButton breakbutton)
         {
             breakbutton.SetStatus(true);
         }
 
-       
-
         public void ChangedTimeScale()
         {
             Time.timeScale = TimeScale;
         }
-        
-        
+
         private void UpdateInterfaceButtonStatus()
         {
             var button = GetChildByNameAlsoHidden("Connected");
@@ -920,17 +895,17 @@ namespace realvirtual
             switch (buttonname)
             {
                 case "Play":
-                {
-                    var insp = GetComponentInChildren<RuntimeHierarchy>();
-                    if (insp != null)
                     {
-                        insp.SceneReloaded();
-                    }
+                        var insp = GetComponentInChildren<RuntimeHierarchy>();
+                        if (insp != null)
+                        {
+                            insp.SceneReloaded();
+                        }
 
-                    SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-                    Pause();
-                    break;
-                }
+                        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+                        Pause();
+                        break;
+                    }
                 case "Pause":
                     if (buttonpressed)
                     {
@@ -957,20 +932,20 @@ namespace realvirtual
                     Invoke("Pause", 0.1F);
                     break;
                 case "ObjectSelection":
-                {
-                    if (currentSelectionRaycast == null)
-                        return;
-                    if (buttonpressed)
                     {
-                        currentSelectionRaycast.IsActive = true;
-                    }
-                    else
-                    {
-                        currentSelectionRaycast.IsActive = false;
-                    }
+                        if (currentSelectionRaycast == null)
+                            return;
+                        if (buttonpressed)
+                        {
+                            currentSelectionRaycast.IsActive = true;
+                        }
+                        else
+                        {
+                            currentSelectionRaycast.IsActive = false;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
             }
         }
 
@@ -985,10 +960,7 @@ namespace realvirtual
                     {
                         go.gameObject.BroadcastMessage(fun, SendMessageOptions.DontRequireReceiver);
                     }
-                    catch
-                        (Exception e)
-                    {
-                    }
+                    catch (Exception e) { }
                 }
             }
         }
@@ -1005,17 +977,15 @@ namespace realvirtual
 
             return false;
         }
-       
 
         private void LoadAdditiveScenes()
         {
-            totalscenestoload = AdditiveScenes.Count+1;
+            totalscenestoload = AdditiveScenes.Count + 1;
             scenesloaded = 0;
             if (DebugMode) Logger.Log("Load Additive Scenes");
-            
-            // write out all loaded scenes
+
             var loadedscenes = SceneManager.sceneCount;
-         
+
             if (AdditiveScenes != null)
             {
                 foreach (var scene in AdditiveScenes)
@@ -1024,23 +994,22 @@ namespace realvirtual
                     {
                         if (AdditiveLoadScenes)
                         {
-                            var scenePath = scene; // Assuming `scene` is the path to the scene
+                            var scenePath = scene;
                             var loadedScene = SceneManager.GetSceneByPath(scenePath);
                             var scenename = loadedScene.name;
 
                             if (!Application.isPlaying)
                             {
+#if UNITY_EDITOR
                                 if (!loadedScene.isLoaded)
                                 {
-                                    #if UNITY_EDITOR
                                     EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
                                     if (DebugMode) Logger.Message("Additive Scene " + scene + " loaded in Editor", this);
-                                    #endif
                                 }
+#endif
                             }
                             else
                             {
-                                // Fix: Check if the scene is valid before checking if it's loaded
                                 if (!IsSceneLoaded(scenename))
                                 {
                                     SceneManager.LoadScene(scenePath, LoadSceneMode.Additive);
@@ -1050,13 +1019,12 @@ namespace realvirtual
                                 {
                                     if (DebugMode) Logger.Message("Scene " + scenePath + " was already loaded in Editor", this);
                                 }
-
                             }
                         }
                         else
                         {
 #if UNITY_EDITOR
-                            var scenePath = scene; // Assuming `scene` is the path to the scene
+                            var scenePath = scene;
                             var loadedScene = SceneManager.GetSceneByPath(scenePath);
 
                             if (loadedScene.isLoaded)
@@ -1066,14 +1034,9 @@ namespace realvirtual
 #endif
                         }
                     }
-                    catch
-                    {
-                    }
+                    catch { }
 
-                    // get the realvirtualController in the loaded scene
-                    var controllers =
-                        UnityEngine.Object.FindObjectsByType<realvirtualController>(FindObjectsSortMode.None);
-                    // disable the gameobject
+                    var controllers = UnityEngine.Object.FindObjectsByType<realvirtualController>(FindObjectsSortMode.None);
                     foreach (var controller in controllers)
                     {
                         if (controller.gameObject.scene != this.gameObject.scene)
@@ -1081,12 +1044,9 @@ namespace realvirtual
                             controller.gameObject.SetActive(false);
                         }
                     }
-                    
                 }
             }
         }
-
-
 
         public void RemoveMeshGizmo(meshGizmo lasthovered)
         {
@@ -1109,13 +1069,10 @@ namespace realvirtual
             if (!second)
                 clickedMesh.MeshColor = EditorGizmoSettings.FirstSelectedMeshColor;
             else
-            {
                 clickedMesh.MeshColor = EditorGizmoSettings.SecondSelectedMeshColor;
-            }
         }
 
-        public meshGizmo signalGizmoMesh(GameObject obj, float pivotSize, Color meshColor, bool drawpivot,
-            bool drawcenter)
+        public meshGizmo signalGizmoMesh(GameObject obj, float pivotSize, Color meshColor, bool drawpivot, bool drawcenter)
         {
             var mesh = obj.GetComponent<MeshFilter>();
             var meshGizmo = new meshGizmo();
@@ -1163,14 +1120,11 @@ namespace realvirtual
 #if UNITY_EDITOR
             if (EditorGizmoSettings == null)
             {
-                //get a default setting in an another Folder
                 EditorGizmoSettings = AssetDatabase.LoadAssetAtPath<EditorGizmoOptions>(
                     "Assets/realvirtual/Settings/EditorGizmoOptionsDefalut.asset");
             }
-
             return EditorGizmoSettings;
-#endif
-#if !UNITY_EDITOR
+#else
             return null;
 #endif
         }
@@ -1179,18 +1133,13 @@ namespace realvirtual
 
         #region PrivateMethods
 
-        protected new bool hideactiveonly()
-        {
-            return true;
-        }
-
+        protected new bool hideactiveonly() { return true; }
 
         private void HideGroupsOnStart()
         {
             foreach (var group in HideGroups)
             {
                 var elements = GetAllWithGroup(group);
-
                 foreach (var element in elements)
                 {
                     element.gameObject.SetActive(false);
@@ -1217,13 +1166,11 @@ namespace realvirtual
             Time.timeScale = 1;
             InvokeRepeating("UpdateHierarchy", 1.0F, HierarchyUpdateCycle);
             var obj = GameObject.Find("__MonoContext__");
-
             Object.DestroyImmediate(obj);
 #if CINEMACHINE
             if (StartWithCinemachineCamera != null)
                 SetCinemachineCamera(StartWithCinemachineCamera);
 #endif
-
             if (Restart)
                 if (RestartSceneAfterSeconds > 0)
                     Invoke("RestartScene", RestartSceneAfterSeconds);
@@ -1244,25 +1191,21 @@ namespace realvirtual
 
         public void UpdateSignals()
         {
-            /// Clear Info on all Signals
             var signals = FindObjectsByType<Signal>(FindObjectsSortMode.None);
             foreach (var signal in signals)
             {
                 signal.DeleteSignalConnectionInfos();
             }
 
-            /// get all Behavior models
             var behaviors = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).OfType<ISignalInterface>();
             foreach (var behavior in behaviors)
             {
-                // now get all signals in behaviors
                 var connections = behavior.GetConnections();
                 foreach (var info in connections)
                 {
                     if (info.Signal != null)
                     {
-                        info.Signal.AddSignalConnectionInfo(behavior.gameObject
-                            , info.Name);
+                        info.Signal.AddSignalConnectionInfo(behavior.gameObject, info.Name);
                     }
                 }
             }
@@ -1278,7 +1221,6 @@ namespace realvirtual
         public void UpdateConnectionButton()
         {
             var button = GetChildByName("Connected");
-
             if (button != null)
             {
                 _buttonconnection = button.GetComponent<rvUIToolbarButton>();
@@ -1286,9 +1228,6 @@ namespace realvirtual
                     _buttonconnection.SetStatus(Connected);
             }
         }
-
-
-        
 
         private void CeckSignalUpdate()
         {
@@ -1308,7 +1247,6 @@ namespace realvirtual
                 return;
 
             var center = new Vector3(0, 0, 0);
-            var rotation = Quaternion.identity;
             if (EditorGizmoSettings != null)
             {
                 if (EditorGizmoSettings.SelectedMeshes.Count == 0)
@@ -1322,59 +1260,37 @@ namespace realvirtual
                     {
                         Gizmos.color = meshGizmo.MeshColor;
                         Gizmos.DrawWireMesh(mesh.sharedMesh, mesh.gameObject.transform.position,
-                            mesh.gameObject.transform.rotation,
-                            mesh.gameObject.transform.lossyScale);
+                            mesh.gameObject.transform.rotation, mesh.gameObject.transform.lossyScale);
                         if (meshGizmo.DrawMeshCenter)
                         {
                             var boundscenterlocal = mesh.sharedMesh.bounds.center;
-                            // transform to global position
                             var boundscenter = mesh.transform.TransformPoint(boundscenterlocal);
 
                             Gizmos.color = Color.white;
-                            Gizmos.DrawLine(boundscenter - mesh.transform.forward * size,
-                                boundscenter + mesh.transform.forward * size);
-                            Gizmos.DrawLine(boundscenter - mesh.transform.up * size,
-                                boundscenter + mesh.transform.up * size);
-                            Gizmos.DrawLine(boundscenter - mesh.transform.right * size,
-                                boundscenter + mesh.transform.right * size);
+                            Gizmos.DrawLine(boundscenter - mesh.transform.forward * size, boundscenter + mesh.transform.forward * size);
+                            Gizmos.DrawLine(boundscenter - mesh.transform.up * size, boundscenter + mesh.transform.up * size);
+                            Gizmos.DrawLine(boundscenter - mesh.transform.right * size, boundscenter + mesh.transform.right * size);
                         }
                     }
 
                     if (meshGizmo.DrawMeshPivot)
                     {
                         Gizmos.color = Color.blue;
-                        Gizmos.DrawLine(center - meshGizmo.mainGO.transform.forward * size,
-                            center + meshGizmo.mainGO.transform.forward * size);
+                        Gizmos.DrawLine(center - meshGizmo.mainGO.transform.forward * size, center + meshGizmo.mainGO.transform.forward * size);
                         Gizmos.color = Color.green;
-                        Gizmos.DrawLine(center - meshGizmo.mainGO.transform.up * size,
-                            center + meshGizmo.mainGO.transform.up * size);
+                        Gizmos.DrawLine(center - meshGizmo.mainGO.transform.up * size, center + meshGizmo.mainGO.transform.up * size);
                         Gizmos.color = Color.red;
-                        Gizmos.DrawLine(center - meshGizmo.mainGO.transform.right * size,
-                            center + meshGizmo.mainGO.transform.right * size);
+                        Gizmos.DrawLine(center - meshGizmo.mainGO.transform.right * size, center + meshGizmo.mainGO.transform.right * size);
                     }
                 }
             }
         }
 
-
+        // ===== REPLACEMENT: No legacy Input polling. New Input System handles hotkeys. =====
         void Update()
         {
-           /* //   QuickToggle.SetGame4Automation(this);
-            if (Application.isPlaying)
-            {
-                if (Input.GetKey(KeyCode.Escape))
-                {
-                    Quit();
-                }
-
-                if (Input.GetKeyDown(KeyCode.F12))
-                {
-                    if (_debugconsole != null)
-                    {
-                        _debugconsole.SetActive(!_debugconsole.activeSelf);
-                    }
-                }
-            }*/
+            // Intentionally empty: gameplay/UI is driven by events and toolbar buttons.
+            // New Input System actions (ToggleConsoleAction/QuitAction) are handled via callbacks.
         }
 
         static void AddComponent(string assetpath)
@@ -1388,7 +1304,6 @@ namespace realvirtual
             {
                 go.transform.parent = component.transform;
             }
-
             Undo.RegisterCreatedObjectUndo(go, "Create " + go.name);
 #endif
         }
@@ -1402,11 +1317,22 @@ namespace realvirtual
             if (DebugMode) Logger.Log("realvirtual Controller Scene loaded: " + SceneManager.GetActiveScene().name);
             Scene activeScene = SceneManager.GetActiveScene();
 
-            // Check if this is the first loaded scene
             if (SceneManager.sceneCount > 0 && SceneManager.GetSceneAt(0) == activeScene)
             {
                 LoadAdditiveScenes();
             }
+        }
+
+        // ===== New Input System callbacks =====
+        private void OnToggleConsole(InputAction.CallbackContext ctx)
+        {
+            if (_debugconsole != null)
+                _debugconsole.SetActive(!_debugconsole.activeSelf);
+        }
+
+        private void OnQuitAction(InputAction.CallbackContext ctx)
+        {
+            Quit();
         }
     }
 }

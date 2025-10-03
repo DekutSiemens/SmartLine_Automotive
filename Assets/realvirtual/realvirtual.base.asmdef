@@ -21,7 +21,8 @@
         "",
         "IngameDebugConsole.Runtime",
         "Unity.Splines",
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [
