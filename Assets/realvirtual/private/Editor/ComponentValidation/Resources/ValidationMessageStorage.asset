@@ -12,10 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f30627afabcec6746bc3ca24742b1675, type: 3}
   m_Name: ValidationMessageStorage
   m_EditorClassIdentifier: 
-  messages:
-  - message: '[Validation: Sensor Setup] No signals configured on sensor - it won''t
-      communicate occupation state'
-    logType: 2
-    timestamp: 11:11:59
-    context: {fileID: 0}
-  hasNewMessages: 1
+  messages: []
+  hasNewMessages: 0
